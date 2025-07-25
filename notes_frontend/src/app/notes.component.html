@@ -1,0 +1,69 @@
+<div class="notes-app">
+  <header class="app-header">
+    <span class="app-title">Personal Notes</span>
+    <button class="add-btn" (click)="newNote()" aria-label="Create new note">+ New</button>
+  </header>
+  <main class="notes-main">
+    <aside class="notes-list">
+      <div
+        class="note-row"
+        *ngFor="let note of notes"
+        [class.active]="selectedNote?.id === note.id"
+        (click)="selectNote(note)"
+      >
+        <span class="note-title">{{ note.title }}</span>
+        <button class="delete-btn" (click)="deleteNote(note); $event.stopPropagation()" aria-label="Delete note">
+          &#128465;
+        </button>
+      </div>
+      <div *ngIf="!notes.length" class="empty-tip">No notes yet</div>
+    </aside>
+    <section class="note-detail">
+      <form *ngIf="editMode" (submit)="$event.preventDefault(); saveNote();">
+        <input
+          class="note-title-input"
+          [(ngModel)]="newNoteTitle"
+          [placeholder]="'Title'"
+          name="titleInput"
+          maxlength="100"
+          required
+        />
+        <textarea
+          class="note-content-input"
+          [(ngModel)]="newNoteContent"
+          [placeholder]="'Content...'"
+          name="contentInput"
+          rows="14"
+        ></textarea>
+        <div class="editor-actions">
+          <button class="save-btn" type="submit" [disabled]="loading">
+            {{ selectedNote ? "Update" : "Create" }}
+          </button>
+          <button class="cancel-btn" type="button" (click)="cancelEdit()" [disabled]="loading">
+            Cancel
+          </button>
+        </div>
+        <div class="error" *ngIf="errorMsg">{{ errorMsg }}</div>
+      </form>
+      <ng-container *ngIf="!editMode">
+        <ng-container *ngIf="selectedNote; else noNoteSel">
+          <div class="detail-header">
+            <span class="note-view-title">{{ selectedNote?.title }}</span>
+            <button class="edit-btn" (click)="editNote()">Edit</button>
+          </div>
+          <div class="note-view-content">{{ selectedNote?.content }}</div>
+          <div class="note-meta">
+            <span>Last updated: {{ selectedNote?.updated_at | date:'short' }}</span>
+          </div>
+        </ng-container>
+        <ng-template #noNoteSel>
+          <div class="nothing-container">
+            <div class="nothing-message">
+              <span>Select or create a note</span>
+            </div>
+          </div>
+        </ng-template>
+      </ng-container>
+    </section>
+  </main>
+</div>
