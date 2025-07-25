@@ -23,11 +23,25 @@ this.supabase = createClient(supabaseUrl, supabaseKey);
 
 Supabase must include a table named `notes` with the following columns (types are recommended):
 
-- `id`: integer, primary key, auto-increment
+- `id`: integer, primary key, auto-increment (may appear as bigint)
 - `title`: text
 - `content`: text
 - `created_at`: timestamp, default now()
 - `updated_at`: timestamp, updated on change
+
+Your Supabase table may include additional columns (e.g., `body`, `tags`, etc.), but at minimum, the above are required for this app to work.
+
+## Row Level Security (RLS) & Policies
+
+Row Level Security is ENABLED on the `notes` table.
+
+The following open (demo) policies have been applied:
+- **Allow all read**: Anyone can read notes.
+- **Allow all insert**: Anyone can create notes.
+- **Allow all update**: Anyone can update notes.
+- **Allow all delete**: Anyone can delete notes.
+
+> These policies are suitable for demonstration/development purposes. For production, restrict access as appropriate.
 
 ## CRUD Features
 
@@ -38,3 +52,31 @@ This app allows you to:
 - Delete notes
 
 All operations are handled through the Supabase JS SDK.
+
+---
+
+### Supabase Setup Instructions for Developers
+
+1. Make sure your Supabase project environment exposes the following variables:
+   - `NG_APP_SUPABASE_URL` (String)
+   - `NG_APP_SUPABASE_KEY` (String)
+
+2. Table structure:
+   - Table name: `notes`
+   - Columns: `id`, `title`, `content`, `created_at`, `updated_at` (extra columns permitted)
+
+3. Row Level Security:
+   - Make sure RLS is enabled on `notes`.
+   - The following SQL should have already been applied:
+     ```sql
+     ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+     CREATE POLICY "Allow all read" ON notes FOR SELECT USING (true);
+     CREATE POLICY "Allow all insert" ON notes FOR INSERT WITH CHECK (true);
+     CREATE POLICY "Allow all update" ON notes FOR UPDATE USING (true);
+     CREATE POLICY "Allow all delete" ON notes FOR DELETE USING (true);
+     ```
+
+4. These settings allow the Angular app to perform CRUD operations on the notes table without authentication.
+
+5. For production, restrict the policies as appropriate.
+

@@ -27,16 +27,21 @@ export class NotesComponent implements OnInit, OnDestroy {
     accent: '#ffca28'
   };
 
-  constructor(private notesService: NotesService) {}
+  constructor(private _notesService: NotesService) {}
 
   ngOnInit(): void {
-    this.notesSub = this.notesService.notes$.subscribe((notes: Note[]) => {
+    this.notesSub = this._notesService.notes$.subscribe((notes: Note[]) => {
       this.notes = notes;
       if (this.selectedNote) {
         this.selectedNote = notes.find((n) => n.id === this.selectedNote?.id) || null;
       }
     });
-    this.notesService.fetchNotes();
+    // If supabase could not be initialized, avoid fetch call and show warning
+    if (this._notesService.isAvailable()) {
+      this._notesService.fetchNotes();
+    } else {
+      this.errorMsg = "Supabase not available: check environment variables.";
+    }
   }
 
   ngOnDestroy(): void {
@@ -82,7 +87,7 @@ export class NotesComponent implements OnInit, OnDestroy {
 
     if (this.selectedNote && this.selectedNote.id) {
       // Update
-      this.notesService
+      this._notesService
         .updateNote(this.selectedNote.id, title, content)
         .subscribe(({ error }: { error?: any }) => {
           this.loading = false;
@@ -92,11 +97,11 @@ export class NotesComponent implements OnInit, OnDestroy {
           }
           this.editMode = false;
           this.selectedNote = null;
-          this.notesService.fetchNotes();
+          this._notesService.fetchNotes();
         });
     } else {
       // Create
-      this.notesService.addNote(title, content).subscribe(({ error }: { error?: any }) => {
+      this._notesService.addNote(title, content).subscribe(({ error }: { error?: any }) => {
         this.loading = false;
         if (error) {
           this.errorMsg = "Failed to add note";
@@ -104,7 +109,7 @@ export class NotesComponent implements OnInit, OnDestroy {
         }
         this.editMode = false;
         this.selectedNote = null;
-        this.notesService.fetchNotes();
+        this._notesService.fetchNotes();
       });
     }
   }
@@ -116,7 +121,7 @@ export class NotesComponent implements OnInit, OnDestroy {
       (globalThis as any).confirm(`Delete "${note.title}"?`)
     ) {
       this.loading = true;
-      this.notesService.deleteNote(note.id).subscribe(({ error }: { error?: any }) => {
+      this._notesService.deleteNote(note.id).subscribe(({ error }: { error?: any }) => {
         this.loading = false;
         if (error) {
           this.errorMsg = "Failed to delete note";
@@ -126,7 +131,7 @@ export class NotesComponent implements OnInit, OnDestroy {
           this.selectedNote = null;
           this.editMode = false;
         }
-        this.notesService.fetchNotes();
+        this._notesService.fetchNotes();
       });
     }
   }

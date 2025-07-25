@@ -21,12 +21,12 @@ export interface Note {
   providedIn: "root",
 })
 export class NotesService {
-  private supabase: SupabaseClient;
+  private supabase: SupabaseClient | null = null;
   private notesSubject = new BehaviorSubject<Note[]>([]);
   public notes$ = this.notesSubject.asObservable();
 
   constructor() {
-    // For SSR-safety and lint: fallback if global env is not defined
+    // SSR and build: avoid crashing if env not set
     let supabaseUrl = "";
     let supabaseKey = "";
     if (typeof globalThis !== 'undefined' && (globalThis as any).env) {
@@ -36,8 +36,13 @@ export class NotesService {
       supabaseUrl = (import.meta as any).env?.NG_APP_SUPABASE_URL;
       supabaseKey = (import.meta as any).env?.NG_APP_SUPABASE_KEY;
     }
-    this.supabase = createClient(supabaseUrl, supabaseKey);
-    this.fetchNotes();
+    if (supabaseUrl && supabaseKey) {
+      this.supabase = createClient(supabaseUrl, supabaseKey);
+    }
+  }
+
+  isAvailable() {
+    return !!this.supabase;
   }
 
   /**
@@ -45,6 +50,10 @@ export class NotesService {
    */
   // PUBLIC_INTERFACE
   fetchNotes() {
+    if (!this.supabase) {
+      this.notesSubject.next([]);
+      return;
+    }
     from(
       this.supabase
         .from("notes")
@@ -64,6 +73,7 @@ export class NotesService {
    */
   // PUBLIC_INTERFACE
   addNote(title: string, content: string): Observable<any> {
+    if (!this.supabase) return from(Promise.resolve({ error: { message: 'Supabase not initialized' } }));
     const insertPromise = this.supabase
       .from("notes")
       .insert([{ title, content }])
@@ -78,6 +88,7 @@ export class NotesService {
    */
   // PUBLIC_INTERFACE
   updateNote(id: number, title: string, content: string): Observable<any> {
+    if (!this.supabase) return from(Promise.resolve({ error: { message: 'Supabase not initialized' } }));
     const updatePromise = this.supabase
       .from("notes")
       .update({ title, content, updated_at: new Date().toISOString() })
@@ -93,6 +104,7 @@ export class NotesService {
    */
   // PUBLIC_INTERFACE
   deleteNote(id: number): Observable<any> {
+    if (!this.supabase) return from(Promise.resolve({ error: { message: 'Supabase not initialized' } }));
     const deletePromise = this.supabase
       .from("notes")
       .delete()
